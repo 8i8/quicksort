@@ -25,9 +25,9 @@
 
  ============================================================================
  */
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
@@ -35,22 +35,24 @@
 
 #define REFRESH_RATE	100000
 
-enum colours { WHITE, RED, GREEN, BLUE, YELLOW };
+typedef short int bool;
+enum colours { WHITE, RED, GREEN, BLUE, YELLOW, MAGENTA };
+enum swap { NONE, ONE, TWO, THREE };
+enum boolean { false, true };
+bool STEP, AUTO, WORD, RESIZE;
 
 void getSizes(void);
 int myRand(int range);
 void fillArray(int v[], int x, int y);
 void pArray(int v[], int x);
 void _qsort(int *v, int left, int right);
-void swap(int *v, int i, int j);
-void draw(int *v, int left, int right, int colour);
+void swap(int *v, int left, int right, int type);
+void draw(int *v, int left, int right, int colour, int swap);
 void histogram(int array[], int x, int y, int left, int right, int colour);
 void clearScreen();
 
-int STEP = 0;
-int AUTO = 0;
-int ROW, X;
-int COL, Y;
+int ROW, X = 20;
+int COL, Y = 40;
 
 int main(int argc, char* argv[])
 {
@@ -59,24 +61,28 @@ int main(int argc, char* argv[])
 		while ((c = *++argv[0]))
 			switch (c) {
 				case 's':
-					STEP = 1;
+					STEP = true;
 					break;
 				case 'a':
-					AUTO = 1;
+					AUTO = true;
+					break;
+				case 'w':
+					WORD = true;
+					break;
+				case 'r':
+					RESIZE = true;
 					break;
 				default:
 					break;
 			}
 
-
-	getSizes();
-
-	int x = X;
-	int y = Y;
-	int v[x-1];
-
 	while(1)
 	{
+		getSizes();
+		int x = X;
+		int y = Y;
+		int v[x];
+
 		fillArray(v, x, y);
 		_qsort(v, 0, x-1);
 
@@ -96,8 +102,10 @@ void getSizes(void)
 
 	ROW = max.ws_row;
 	COL = max.ws_col;
-	Y = ROW-2;
-	X = (COL/3)-2;
+	if (RESIZE) {
+		Y = ROW-2;
+		X = (COL/3)-2;
+	}
 }
 
 /*
@@ -133,7 +141,7 @@ int myRand(int range)
 void fillArray(int v[], int x, int y)
 {
 	int i;
-	for(i = 0; i < x; i++)
+	for(i = 0; i <= x; i++)
 		v[i] = myRand(y-1);	
 }
 
@@ -146,6 +154,9 @@ void pArray(int v[], int x)
 	for (i = 0; i < x; i++)
 		printf("\033[37m%2d ", v[i]);
 	putchar('\n');
+	for (i = 0; i < x; i++)
+		printf("\033[37m%2d ", i);
+	putchar('\n');
 }
 
 /*
@@ -156,48 +167,84 @@ void _qsort(int *v, int left, int right)
 	int i, last;
 
 	if (left >= right) {
-		draw(v, left, right, BLUE);
+		draw(v, left, right, BLUE, NONE);
 		return;
 	}
 
-	swap(v, left, (left + right)/2);
+	swap(v, left, (left + right)/2, ONE);
+
 	last = left;
 	for (i = left+1; i <= right; i++) {
-		if (v[left] > v[i]) {
-			swap(v, ++last, i);
+		if (v[i] < v[left]) {
+			swap(v, ++last, i, TWO);
 		} else
-			draw(v, left, i, BLUE);
+			draw(v, left, i, BLUE, NONE);
 	}
 
-	swap(v, left, last);
+	swap(v, left, last, THREE);
+
 	_qsort(v, left, last-1);
 	_qsort(v, last+1, right);
 }
 
-void draw(int *v, int left, int right, int colour)
+char* setSwap(int swap)
 {
+	static char swapped[12];
+	char *sw;
+	sw = swapped;
+
 	clearScreen();
+	switch (swap)
+	{
+		case NONE:
+			break;
+		case ONE:
+			strcpy(swapped, "One");
+			break;
+		case TWO:
+			strcpy(swapped, "Two");
+			break;
+		case THREE:
+			strcpy(swapped, "Three");
+			break;
+		default:
+			break;
+	}
+
+	return sw;
+}
+
+void draw(int *v, int left, int right, int colour, int swap)
+{
+	char* sw;
+
+	sw = setSwap(swap);
+
 	histogram(v, X, Y, left, right, colour);
 	pArray(v, X);
-	if (STEP && ((colour == RED && v[left] > v[right]) || colour == BLUE)) {
-		printf("\033[37m%d : %d --> %d > %d",left, right, v[left], v[right]);
+	if (WORD)
+		printf("\033[37mleft: v[%d]=%d,\tright v[%d]=%d\t\t\tswap:~ %s\n", 
+				left, v[left], right, v[right], sw);
+
+	if (STEP && ((colour == RED && v[left] > v[right]) || colour == YELLOW)) {
 		getchar();
 	} else 
 		usleep(REFRESH_RATE);
 }
 
-void swap(int *v, int i, int j)
+void swap(int *v, int left, int right, int swap)
 {
 	int temp;
 
-	draw(v, i, j, RED);
-	temp = v[i];
-	v[i] = v[j];
-	v[j] = temp;
-	draw(v, i, j, RED);
-	draw(v, i, j, YELLOW);
-	draw(v, i, j, GREEN);
-	draw(v, i, j, BLUE);
+	draw(v, left, right, RED, swap);
+
+	temp = v[left];
+	v[left] = v[right];
+	v[right] = temp;
+
+	draw(v, left, right, RED, swap);
+	draw(v, left, right, YELLOW, swap);
+	draw(v, left, right, GREEN, swap);
 }
 
 /*
@@ -227,6 +274,8 @@ void histogram(int *v, int x, int y, int left, int right, int colour)
 					printf(" \033[1;33m%c ", hist[k][j]);
 				else if (colour == BLUE)
 					printf(" \033[1;34m%c ", hist[k][j]);
+				else if (colour == MAGENTA)
+					printf(" \033[1;35m%c ", hist[k][j]);
 			} else
 				printf(" \033[37m%c ", hist[k][j]);
 		}
@@ -239,10 +288,6 @@ void histogram(int *v, int x, int y, int left, int right, int colour)
  */
 void clearScreen()
 {
-	struct winsize max;
-	ioctl(0, TIOCGWINSZ , &max);
-
-	for (int i = 0; i < ROW; i++)
-	       puts("");
+	puts("\033[H\033[J");
 }
 
