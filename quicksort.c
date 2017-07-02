@@ -76,13 +76,13 @@ int main(int argc, char* argv[])
 					break;
 			}
 
+	getSizes();
+	int x = X;
+	int y = Y;
+	int v[x];
+
 	while(1)
 	{
-		getSizes();
-		int x = X;
-		int y = Y;
-		int v[x];
-
 		fillArray(v, x, y);
 		_qsort(v, 0, x-1);
 
@@ -189,37 +189,25 @@ void _qsort(int *v, int left, int right)
 
 char* setSwap(int swap)
 {
-	static char swapped[12];
-	char *sw;
-	sw = swapped;
+	static int hold = 0;
+	swap ? (hold = swap) : (swap = hold);
 
-	clearScreen();
-	switch (swap)
-	{
-		case NONE:
-			break;
-		case ONE:
-			strcpy(swapped, "One");
-			break;
-		case TWO:
-			strcpy(swapped, "Two");
-			break;
-		case THREE:
-			strcpy(swapped, "Three");
-			break;
-		default:
-			break;
-	}
+	if (swap == ONE)
+		return "One";
+	else if (swap == TWO)
+		return "Two";
+	else if (swap == THREE)
+		return "Three";
 
-	return sw;
+	return NULL;
 }
 
 void draw(int *v, int left, int right, int colour, int swap)
 {
-	char* sw;
+	static char* sw;
 
+	clearScreen();
 	sw = setSwap(swap);
-
 	histogram(v, X, Y, left, right, colour);
 	pArray(v, X);
 	if (WORD)
