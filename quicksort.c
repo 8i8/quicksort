@@ -204,7 +204,7 @@ char* setSwap(int swap)
 
 void draw(int *v, int left, int right, int colour, int swap)
 {
-	static char* sw;
+	char* sw;
 
 	clearScreen();
 	sw = setSwap(swap);
@@ -223,6 +223,11 @@ void draw(int *v, int left, int right, int colour, int swap)
 void swap(int *v, int left, int right, int swap)
 {
 	int temp;
+
+	if (left == right) {
+		draw(v, left, right, MAGENTA, swap);
+		return;
+	}
 
 	draw(v, left, right, RED, swap);
 
