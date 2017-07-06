@@ -32,16 +32,14 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-
-#define REFRESH_RATE	100000
+#include <errno.h>
 
 typedef short int bool;
 enum colours { WHITE, RED, GREEN, BLUE, YELLOW, MAGENTA };
 enum swap { NONE, ONE, TWO, THREE };
 enum boolean { false, true };
-bool STEP, AUTO, WORD, RESIZE;
+bool STEP, AUTO, WORD;
 
-void getSizes(void);
 int myRand(int range);
 void fillArray(int v[], int x, int y);
 void pArray(int v[], int x);
@@ -51,8 +49,9 @@ void draw(int *v, int left, int right, int colour, int swap);
 void histogram(int array[], int x, int y, int left, int right, int colour);
 void clearScreen();
 
-int ROW, X = 20;
-int COL, Y = 40;
+#define REFRESH_RATE	100000
+int X = 20;
+int Y = 20;
 
 int main(int argc, char* argv[])
 {
@@ -69,22 +68,19 @@ int main(int argc, char* argv[])
 				case 'w':
 					WORD = true;
 					break;
-				case 'r':
-					RESIZE = true;
-					break;
 				default:
 					break;
 			}
 
-	getSizes();
 	int x = X;
 	int y = Y;
 	int v[x];
 
-	while(1)
+	
+	while (!feof(stdin))
 	{
 		fillArray(v, x, y);
-		_qsort(v, 0, x-1);
+		_qsort(v, 0, x-1);	/* Last value of v[x] is 0, thus x-1 */
 
 		if (AUTO)
 			usleep(REFRESH_RATE*10);
@@ -93,19 +89,6 @@ int main(int argc, char* argv[])
 	}
 
 	return 0;
-}
-
-void getSizes(void)
-{
-	struct winsize max;
-	ioctl(0, TIOCGWINSZ , &max);
-
-	ROW = max.ws_row;
-	COL = max.ws_col;
-	if (RESIZE) {
-		Y = ROW-2;
-		X = (COL/3)-2;
-	}
 }
 
 /*
@@ -141,8 +124,9 @@ int myRand(int range)
 void fillArray(int v[], int x, int y)
 {
 	int i;
-	for(i = 0; i <= x; i++)
-		v[i] = myRand(y-1);	
+	for(i = 0; i < x; i++)
+		v[i] = myRand(y);	
+	v[i] = 0;
 }
 
 /*
@@ -171,7 +155,7 @@ void _qsort(int *v, int left, int right)
 		return;
 	}
 
-	swap(v, left, (left + right)/2, ONE);
+	swap(v, left, left+(right-left)/2, ONE);
 
 	last = left;
 	for (i = left+1; i <= right; i++) {
