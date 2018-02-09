@@ -1,14 +1,14 @@
 /*
  ============================================================================
 
- Name        : quicksort.c
+ Name        : visual_quicksort.c
  Author      : Iain Hill
  Version     : 1
  Copyright   : GPL
 
  Description : Program to observe and debug the quiksort algorithm
 
-    Copyright (C) 2017 Iain Hill. 
+    Copyright (C) 2017 Iain Hill.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ void histogram(int array[], int x, int y, int left, int right, int colour);
 void clearScreen();
 
 #define REFRESH_RATE	100000
-int X = 20;
+int X = 10;
 int Y = 20;
 
 int main(int argc, char* argv[])
@@ -76,7 +76,6 @@ int main(int argc, char* argv[])
 	int y = Y;
 	int v[x];
 
-	
 	while (!feof(stdin))
 	{
 		fillArray(v, x, y);
@@ -125,12 +124,12 @@ void fillArray(int v[], int x, int y)
 {
 	int i;
 	for(i = 0; i < x; i++)
-		v[i] = myRand(y);	
+		v[i] = myRand(y);
 	v[i] = 0;
 }
 
 /*
- * Print out an array pf int's.
+ * Print out an array of int's.
  */
 void pArray(int v[], int x)
 {
@@ -195,12 +194,12 @@ void draw(int *v, int left, int right, int colour, int swap)
 	histogram(v, X, Y, left, right, colour);
 	pArray(v, X);
 	if (WORD)
-		printf("\033[37mleft: v[%d]=%d,\tright v[%d]=%d\t\t\tswap:~ %s\n", 
+		printf("\033[37mleft: v[%d]=%d,\tright v[%d]=%d\t\t\tswap:~ %s\n",
 				left, v[left], right, v[right], sw);
 
 	if (STEP && ((colour == RED && v[left] > v[right]) || colour == YELLOW)) {
 		getchar();
-	} else 
+	} else
 		usleep(REFRESH_RATE);
 }
 
@@ -236,7 +235,7 @@ void histogram(int *v, int x, int y, int left, int right, int colour)
 		for (j = 0; j < y; j++)
 			if (j < v[i])
 				hist[i][j] = '|';
-			else 
+			else
 				hist[i][j] = ' ';
 	}
 

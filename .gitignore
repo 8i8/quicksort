@@ -1,4 +1,5 @@
 *.swp
 *.swo
+*.eap
 scratch*
 *a.out
