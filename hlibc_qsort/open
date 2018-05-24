@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cscope -bi cscope.files
+vim src/qsort_struct_norec.c

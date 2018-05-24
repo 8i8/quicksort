@@ -5,6 +5,63 @@
 
 #define LEN	5
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  Stack
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+typedef struct _stack {
+	void *elems;
+	int elemSize;
+	int logLength;
+	int allocLength;
+} stack;
+
+void stackNew(stack *s, int elemSize);
+void stackDispose(stack *s);
+void stackPush(stack *s, void *elemAddr);
+void stackPop(stack *s, void *elemAddr);
+
+void stackNew(stack *s, int elemSize)
+{
+	s->elemSize = elemSize;
+	s->logLength = 0;
+	s->allocLength = 4;
+	s->elems = malloc (4 * elemSize);
+}
+
+void stackDispose(stack *s)
+{
+	free(s->elems);
+}
+
+void stackGrow(stack *s)
+{
+	s->allocLength *= 2;
+	s->elems = realloc(s->elems, s->allocLength * s->elemSize);
+}
+
+void stackPush(stack *s, void* elemAddr)
+{
+	if (s->logLength == s->allocLength)
+		stackGrow(s);
+	
+	void *target = (char*)s->elems + s->logLength * s->elemSize;
+
+	memcpy(target, elemAddr, s->elemSize);
+	s->logLength++;
+}
+
+void stackPop(stack *s, void *elemAddr)
+{
+	s->logLength--;
+	void *source = (char*)s->elems + s->logLength * s->elemSize;
+	memcpy(elemAddr, source, s->elemSize);
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  driver
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 typedef struct {
 	int i;
 	char *string;
@@ -26,9 +83,9 @@ int main(void)
 {
 	Test list[LEN] = {
 		{ 4, "This is string one", 1 },
-		{ 3, "And this number 2", 2 },
+		{ 2, "And this number 2", 2 },
 		{ 5, "World of wonders", 3	},
-		{ 2, "Another line always another line", 4 },
+		{ 3, "Another line always another line", 4 },
 		{ 1, "Aardvarks are always first", 5 },
 	};
 	Test *l_ptr;
@@ -43,12 +100,16 @@ int main(void)
 	return 0;
 }
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  qsort
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
 char *_partition(char *l, char *r, size_t width, comp fn)
 {
 	char *i;
 	int t;
 
-	for (i = l, t = 0; i < r; i+=width, t = 0)
+	for (i = l, t = 0; i < r; i += width, t = 0)
 		if ((t = (fn)(i, r)) < 0) {
 			_swap(l, i, width);
 			l += width;
@@ -66,7 +127,7 @@ char *_partition(char *l, char *r, size_t width, comp fn)
 void qsort(void *base, size_t nel, size_t width, comp fn)
 {
 	char **buf;
-	char *b, *l, *r, *p;
+	char *b, *e, *l, *r, *p;
 	int pt = -1;
 
 	if (nel > 1)
@@ -75,10 +136,11 @@ void qsort(void *base, size_t nel, size_t width, comp fn)
 		return;
 
 	buf = malloc(300*width);
-	b = (void*)base;
+	b = base;
+	e = b+nel*width;
 
 	*(buf+(++pt)*width) = b;
-	*(buf+(++pt)*width) = b+nel*width;
+	*(buf+(++pt)*width) = e;
 
 	while (pt >= 0)
 	{
@@ -93,10 +155,10 @@ void qsort(void *base, size_t nel, size_t width, comp fn)
 				*(buf+(++pt)*width) = p-width;
 			}
 
-		if (p < b+nel*width)
-			if ((fn)(p+width, l) < 0) {
+		if (p < e)
+			if ((fn)(p+width, r) < 0) {
 				*(buf+(++pt)*width) = p+width;
-				*(buf+(++pt)*width) = l;
+				*(buf+(++pt)*width) = r;
 			}
 	}
 	free(buf);
@@ -121,6 +183,9 @@ static void _swap(char *l, char *r, size_t width)
 	}
 }
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  sort functions
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 /*
  * strscmp:	Wrapper for struct data, sort function.
@@ -142,6 +207,10 @@ int intscmp(const void* v1, const void* v2)
 		return -1;
 	return 0;
 }
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  print
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 /*
  * print_struct:	Print Test[i] content.

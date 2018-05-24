@@ -1,4 +1,4 @@
-OBJS = qsort_struct_norec.c
+OBJS = src/qsort_struct_norec.c
 
 CC = gcc
 
