@@ -12,39 +12,39 @@ typedef struct _stack {
 	size_t len;
 } Stack;
 
-void stackNew(Stack *s, size_t len);
-void stackFree(Stack *s);
-void stackGrow(Stack *s);
-void stackPush(Stack *s, char *ptr);
-char *stackPop(Stack *s);
+void stack_new(Stack *s, size_t len);
+void stack_free(Stack *s);
+void stack_grow(Stack *s);
+void stack_push(Stack *s, char *ptr);
+char *stac_pPop(Stack *s);
 
-void stackNew(Stack *s, size_t len)
+void stack_new(Stack *s, size_t len)
 {
 	s->len = len;
 	s->ptr = 0;
 	s->buf = malloc(len * sizeof(char*));
 }
 
-void stackFree(Stack *s)
+void stack_free(Stack *s)
 {
 	free(s->buf);
 }
 
-void stackGrow(Stack *s)
+void stack_grow(Stack *s)
 {
 	s->len <<= 1;
 	s->buf = realloc(s->buf, s->len);
 }
 
-void stackPush(Stack *s, char *ptr)
+void stack_push(Stack *s, char *ptr)
 {
 	if (s->ptr == s->len)
-		stackGrow(s);
+		stack_grow(s);
 	
 	s->buf[s->ptr++] = ptr;
 }
 
-char *stackPop(Stack *s)
+char *stack_pop(Stack *s)
 {
 	s->ptr--;
 	return s->buf[s->ptr];
@@ -60,13 +60,11 @@ typedef struct {
 	size_t num;
 } Test;
 
-typedef int (*comp)(const void *, const void *);
-static void _swap(char *i, char *j, size_t width);
+int strscmp(const void* v1, const void* v2);
+int intscmp(const void* v1, const void* v2);
 
 Test *iterate_list(void (*fn)(Test*, size_t), Test *l, size_t len);
 void print_struct(Test *l, size_t i);
-int strscmp(const void* v1, const void* v2);
-int intscmp(const void* v1, const void* v2);
 
 #define LEN	5
 
@@ -76,10 +74,10 @@ int intscmp(const void* v1, const void* v2);
 int main(void)
 {
 	Test list[LEN] = {
-		{ 4, "This is string one", 1 },
+		{ 4, "This is, or was, string one", 1 },
 		{ 2, "And this number 2", 2 },
-		{ 5, "World of wonders", 3	},
-		{ 3, "Another line always another line", 4 },
+		{ 5, "World of wonders, the list is sorted", 3	},
+		{ 3, "Another line, always another line", 4 },
 		{ 1, "Aardvarks are always first", 5 },
 	};
 	Test *l_ptr, *l_ptr2;
@@ -87,7 +85,7 @@ int main(void)
 
 	iterate_list(print_struct, l_ptr, LEN);
 	printf("~~~\n");
-	qsort(&list, LEN, sizeof(Test), strscmp);
+	qsort(&list, LEN, sizeof(Test), intscmp);
 	iterate_list(print_struct, l_ptr2, LEN);
 	printf("\n");
 
@@ -98,6 +96,14 @@ int main(void)
  *  qsort
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
+typedef int (*comp)(const void *, const void *);
+static void _swap(char *i, char *j, size_t width);
+
+/*
+ * _partition: Divides and sorts the given array, l and r are the extremities of
+ * the worked section of the array and the width is the size of each array item
+ * in bytes.
+ */
 char *_partition(char *l, char *r, size_t width, comp fn)
 {
 	char *i;
@@ -132,34 +138,36 @@ void qsort(void *base, size_t nel, size_t width, comp fn)
 	else
 		return;
 
-	stackNew(buf, 300);
+	stack_new(buf, nel);
 
 	b = base;
 	e = b+nel*width;
 
-	stackPush(buf, b);
-	stackPush(buf, e);
+	stack_push(buf, b);
+	stack_push(buf, e);
 
+	/* When the stack is empty the sorting is complete */
 	while (buf->ptr > 0)
 	{
-		r = stackPop(buf);
-		l = stackPop(buf);
+		r = stack_pop(buf);
+		l = stack_pop(buf);
 
+		/* Divide and sort */
 		p = _partition(l, r, width, fn);
 
 		if(p > b)
 			if ((fn)(p-width, l) > 0) {
-				stackPush(buf, l);
-				stackPush(buf, p-width);
+				stack_push(buf, l);
+				stack_push(buf, p-width);
 			}
 
 		if (p < e)
 			if ((fn)(p+width, r) < 0) {
-				stackPush(buf, p+width);
-				stackPush(buf, r);
+				stack_push(buf, p+width);
+				stack_push(buf, r);
 			}
 	}
-	stackFree(buf);
+	stack_free(buf);
 }
 
 /*
@@ -199,11 +207,7 @@ int intscmp(const void* v1, const void* v2)
 {
 	const Test *s1, *s2;
 	s1 = v1, s2 = v2;
-	if(s1->i < s2->i)
-		return 1;
-	if(s1->i > s2->i)
-		return -1;
-	return 0;
+	return s1->i - s2->i;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
