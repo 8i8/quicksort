@@ -40,6 +40,7 @@ enum swap { NONE, ONE, TWO, THREE };
 enum boolean { false, true };
 bool STEP, AUTO, WORD;
 
+void seed_rand(void);
 int myRand(int range);
 void fillArray(int v[], int x, int y);
 void pArray(int v[], int x);
@@ -76,6 +77,8 @@ int main(int argc, char* argv[])
 	int y = Y;
 	int v[x];
 
+	srand(time(NULL));
+
 	while (!feof(stdin))
 	{
 		fillArray(v, x, y);
@@ -91,40 +94,13 @@ int main(int argc, char* argv[])
 }
 
 /*
- * Return a random value between the given limits, I have used timespec to
- * generate the seed for my random value, for this reason the program will only
- * run on a POSIX machine, I shall look further into this subject in the future
- * as it is clearly a facinating area of the computing landscape.
- *
- * <time.h>
- *
- * typedef __clockid_t clockid_t;
- * extern int clock_gettime (clockid_t __clock_id, struct timespec *__tp) __THROW;
- *
- * https://linux.die.net/man/3/clock_getres
- * http://pubs.opengroup.org/onlinepubs/9699919799/functions/clock_gettime.html
- * https://www.cs.rutgers.edu/~pxk/416/notes/c-tutorials/gettime.html
- */
-int myRand(int range)
-{
-	struct timespec seed;
-	clock_gettime(CLOCK_MONOTONIC, &seed);
-	int x;
-
-	srand(seed.tv_nsec);
-	x = rand()%range+1;
-
-	return x;
-}
-
-/*
  * Fill array with randomly generated values.
  */
 void fillArray(int v[], int x, int y)
 {
 	int i;
 	for(i = 0; i < x; i++)
-		v[i] = myRand(y);
+		v[i] = rand() % y+1;
 	v[i] = 0;
 }
 

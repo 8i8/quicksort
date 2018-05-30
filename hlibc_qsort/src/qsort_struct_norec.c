@@ -32,7 +32,7 @@ void stack_free(Stack *s)
 
 void stack_grow(Stack *s)
 {
-	s->len <<= 1;
+	s->len += s->len;
 	s->buf = realloc(s->buf, s->len);
 }
 
@@ -41,13 +41,13 @@ void stack_push(Stack *s, char *ptr)
 	if (s->ptr == s->len)
 		stack_grow(s);
 	
-	s->buf[s->ptr++] = ptr;
+	s->ptr++;
+	s->buf[(s->ptr - 1)] = ptr;
 }
 
 char *stack_pop(Stack *s)
 {
-	s->ptr--;
-	return s->buf[s->ptr];
+	return s->buf[(s->ptr--) - 1];
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,8 +113,14 @@ char *_partition(char *l, char *r, size_t width, comp fn)
 		if ((t = (fn)(i, r)) < 0) {
 			_swap(l, i, width);
 			l += width;
-		} else if (t == 0)
+		} else if (t == 0) {
+			/* If the comparison returns 0, swap only if l and i
+			 * are not the same object; This check avoids a lot of
+			 * unessasary swapping. */
+			if (l != i)
+				_swap(l, i, width);
 			l += width;
+		}
 
 	_swap(l, r, width);
 
@@ -129,7 +135,6 @@ void qsort(void *base, size_t nel, size_t width, comp fn)
 	Stack stack, *buf;
 	char *b, *e, *l, *r, *p;
 	buf = &stack;
-	b = e = l = r = p = NULL;
 
 	/* nel the total count becomes an index, if there is nothing to sort;
 	 * return. */
